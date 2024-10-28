@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:email_validator/email_validator.dart';
+import 'resetpasspage2.dart';
 
 final resetpassemail = TextEditingController(text: "");
 
@@ -119,6 +120,12 @@ class _ResetpassState extends State<Resetpass> {
                       child: ElevatedButton(
                         onPressed: () {
                           print("Email: ${resetpassemail.text}");
+                          Navigator.pushReplacement<void, void>(
+        context,
+        MaterialPageRoute<void>(
+          builder: (BuildContext context) => Resetpasslink(),
+        ),
+      );
                         },
                         child: Text(
                           'Send Reset Link',
