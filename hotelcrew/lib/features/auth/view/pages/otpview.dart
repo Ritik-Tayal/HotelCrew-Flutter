@@ -26,6 +26,7 @@ class _OtpviewState extends State<Otpview> {
   double svgHeight = 236.03;
   double svgWidth = 232.28;
   bool otperror = false;
+   bool _isLoading = false; 
   final FocusNode emailFocusNode = FocusNode();
   final OtpTimerButtonController otp = OtpTimerButtonController();
   String enteredOtp = ""; // Variable to store the OTP entered by the user
@@ -231,7 +232,7 @@ bool isLoading = false;
                           height: 40,
                           width: 328,
                           child: ElevatedButton(
- onPressed: viewModel.isLoading
+ onPressed: isLoading
     ? null
     : () async {
         await viewModel.sendOtp(widget.email, enteredOtp); // Ensure to replace `email` and `otp` with actual values or inputs
