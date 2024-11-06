@@ -1,9 +1,11 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:hotelcrew/features/hoteldetails/pages/setupcomplete.dart';
-
+import 'dart:developer';
 
 class Staffdetails extends StatefulWidget {
   const Staffdetails({super.key});
@@ -14,22 +16,92 @@ class Staffdetails extends StatefulWidget {
 
 class _StaffdetailsState extends State<Staffdetails> {
   List<String> uploadedFiles = []; // List to store uploaded file names
+
 Future<void> _pickFile() async {
-  // Open the file picker with specific type
   FilePickerResult? result = await FilePicker.platform.pickFiles(
-    type: FileType.custom, // Use custom file type
-    allowedExtensions: ['xlsx'], // Only allow .xlsx files
+    type: FileType.custom,
+    allowedExtensions: ['xlsx'],
   );
 
   if (result != null && result.files.isNotEmpty) {
-    // Add the selected file to the list
-    setState(() {
-      uploadedFiles.add(result.files.single.name); // Store file name
-      // You can handle the upload logic here as well
-    });
+    String? filePath = result.files.single.path;
+    String fileName = result.files.single.name;
+
+    if (filePath != null) {
+      log('File path selected: $filePath');
+      log('File name selected: $fileName');
+
+      setState(() {
+        uploadedFiles.add(fileName); // Store file name in the list
+      });
+
+      await uploadFile(filePath, fileName);
+    } else {
+      print('Error: File path is null');
+    }
+  } else {
+    print('No file selected');
   }
 }
 
+  Future<void> uploadFile(String filePath, String fileName) async {
+    try {
+      log('Uploading file: $fileName at path: $filePath');
+
+      final file = File(filePath);
+      if (!file.existsSync()) {
+        print('Error: File does not exist at path: $filePath');
+        return;
+      }
+
+      Dio dio = Dio();
+      dio.options.headers = {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzMzNTEzNjI4LCJpYXQiOjE3MzA5MjE2MjgsImp0aSI6Ijk4YjNlOWIwNjAwYzQzZDNiMWMyOTVkOGFjYzAyMGVmIiwidXNlcl9pZCI6NX0.9u5z8h2ilJgUs1HWoyyFwf5Z5f77xSmmdetQFfiGHTo', // Replace with actual token
+      };
+      dio.options.validateStatus = (status) => true; // Allows all status codes for debugging
+
+      FormData formData = FormData.fromMap({
+        'user': '5',
+        'hotel_name': 'Example Hotel',
+        'legal_business_name': 'Example Business',
+        'year_established': '1999',
+        'license_registration_numbers': '12345678',
+        'complete_address': '123 Example St, City, Country',
+        'main_phone_number': '1234567890',
+        'emergency_phone_number': '0987654321',
+        'email_address': 'hotel@gmail.com',
+        'total_number_of_rooms': '120',
+        'number_of_floors': '5',
+        'valet_parking_available': 'True',
+        'valet_parking_capacity': '20',
+        'check_in_time': '14:00:00',
+        'check_out_time': '12:00:00',
+        'payment_methods': 'Cash, Credit Card',
+        'room_price': '150.00',
+        'number_of_departments': '5',
+        'department_names': 'Reception, Housekeeping, Maintenance, Kitchen, Security',
+        'staff_excel_sheet': await MultipartFile.fromFile(filePath, filename: fileName),
+      });
+
+      Response response = await dio.post(
+        'https://hotelcrew-1.onrender.com/api/hoteldetails/register/',
+        data: formData,
+      );
+
+      if (response.statusCode == 201) {
+        print('Upload successful: ${response.data['message']}');
+      } else if (response.statusCode == 401) {
+        print('Unauthorized: ${response.data}');
+        log('Response data for 401 error: ${response.data}');
+      } else {
+        print('Upload failed with status code: ${response.statusCode}');
+        log('Error data: ${response.data}');
+      }
+    } catch (e) {
+      print('Error uploading file: $e');
+    }
+  }
 
   void _deleteFile(int index) {
     setState(() {
@@ -43,13 +115,11 @@ Future<void> _pickFile() async {
       body: Column(
         children: [
           Container(
-            margin: EdgeInsets.only(top: 44),
+            margin: const EdgeInsets.only(top: 44),
             height: 158,
             width: 360,
             child: InkWell(
-              onTap: ()=>{
-                Navigator.pop(context),
-              },
+              onTap: () => Navigator.pop(context),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -57,76 +127,52 @@ Future<void> _pickFile() async {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: EdgeInsets.only(top: 14, left: 16),
+                        padding: const EdgeInsets.only(top: 14, left: 16),
                         child: Container(
                           height: 16,
                           width: 8,
-                          child: SvgPicture.asset(
-                            'assets/backarrow.svg',
-                            width: 6.32,
-                            height: 11.31,
-                          ),
+                          child: SvgPicture.asset('assets/backarrow.svg'),
                         ),
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Padding(
-                        padding: EdgeInsets.only(top: 14, left: 0),
-                        child: Container(
-                          width: 50,
-                          height: 24,
-                          child: Text(
-                            'Back',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
-                              textStyle: TextStyle(
-                                color: Color(0xFF4D5962),
-                                fontWeight: FontWeight.w400,
-                                fontSize: 16,
-                                height: 1.3,
-                              ),
-                            ),
+                        padding: const EdgeInsets.only(top: 14),
+                        child: Text(
+                          'Back',
+                          style: GoogleFonts.montserrat(
+                            color: const Color(0xFF4D5962),
+                            fontWeight: FontWeight.w400,
+                            fontSize: 16,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 24),
+                  const SizedBox(height: 24),
                   Container(
-                    margin: EdgeInsets.only(left: 16),
-                    height: 32,
-                    width: 328,
+                    margin: const EdgeInsets.only(left: 16),
                     child: Text(
                       'Upload Staff Details',
                       style: GoogleFonts.montserrat(
-                        textStyle: TextStyle(
-                          color: Color(0xFF121212),
-                          fontWeight: FontWeight.w700,
-                          fontSize: 24,
-                          height: 1.3,
-                        ),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 24,
                       ),
                     ),
                   ),
-                  SizedBox(height: 11),
+                  const SizedBox(height: 11),
                   Container(
-                    margin: EdgeInsets.only(left: 16),
-                    height: 42,
-                    width: 328,
+                    margin: const EdgeInsets.only(left: 16),
                     child: Text(
                       'Upload an Excel file with staff names, emails, and departments for easy team management.',
                       style: GoogleFonts.montserrat(
-                        textStyle: TextStyle(
-                          color: Color(0xFF4D5962),
-                          fontWeight: FontWeight.w400,
-                          fontSize: 14,
-                          height: 1.5,
-                        ),
+                        color: const Color(0xFF4D5962),
+                        fontSize: 14,
                       ),
                     ),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   Container(
-                    color: Color(0xFFC6D6DB),
+                    color: const Color(0xFFC6D6DB),
                     height: 1,
                     width: 360,
                   ),
@@ -134,13 +180,12 @@ Future<void> _pickFile() async {
               ),
             ),
           ),
-          // Display the list of uploaded files or an SVG if empty
           Expanded(
             child: uploadedFiles.isEmpty
                 ? Center(
                     child: SvgPicture.asset(
-                'assets/cuate.svg', // Your empty state SVG file
-                      width: 295.27, // Set width or height as needed
+                      'assets/cuate.svg',
+                      width: 295.27,
                       height: 277.8,
                     ),
                   )
@@ -151,92 +196,68 @@ Future<void> _pickFile() async {
                         title: Text(uploadedFiles[index]),
                         trailing: IconButton(
                           icon: SvgPicture.asset('assets/remove.svg'),
-                          onPressed: () => _deleteFile(index), // Delete file on press
+                          onPressed: () => _deleteFile(index),
                         ),
                       );
                     },
                   ),
           ),
-          SizedBox(height: 20), // Additional spacing
+          const SizedBox(height: 20),
           Container(
-            //margin: EdgeInsets.only(left: 113, right: 113),
             decoration: BoxDecoration(
-              color: Color(0xFFD2E0F3),
+              color: const Color(0xFFD2E0F3),
               borderRadius: BorderRadius.circular(8),
             ),
             width: 134,
             height: 40,
             child: TextButton(
-              onPressed: _pickFile, // Call the file picker on button press
-              style: TextButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
+              onPressed: _pickFile,
               child: Row(
                 children: [
-                  //SizedBox(width: 16),
-                  Container(
-                    
-                    height: 18,
-                    width: 18,
-                    child: SvgPicture.asset('assets/add.svg'), // Fixed asset path
-                  ),
-                  SizedBox(width: 7),
-                  Container(
-                    width: 69,
-                    height: 20,
-                    child: Text(
-                      "Add a file",
-                      style: GoogleFonts.montserrat(
-                        textStyle: TextStyle(
-                          color: Color(0xFF47518C2),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          height: 1.5,
-                        ),
-                      ),
+                  SvgPicture.asset('assets/add.svg'),
+                  const SizedBox(width: 7),
+                  Text(
+                    "Add a file",
+                    style: GoogleFonts.montserrat(
+                      color: const Color(0xFF47518C),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          SizedBox(height: 86), // Additional spacing
-        
-        SizedBox(
-                height: 40,
-                width: 328,
-                child: ElevatedButton(
-                  onPressed: () {
-                    print("Next!!!!!!!!");
-                    Navigator.pushReplacement<void, void>(
-        context,
-        MaterialPageRoute<void>(
-          builder: (BuildContext context) => SetupComplete(),
-        ),
-      );
-                  },
-                  child: Text(
-                    'Submit',
-                    style: GoogleFonts.montserrat(
-                      textStyle: const TextStyle(
-                        color: Color(0xFFFAFAFA),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF47518C),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () async {
+              if (uploadedFiles.isNotEmpty) {
+                String fileName = uploadedFiles.first;
+                await uploadFile(fileName, fileName);
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SetupComplete()),
+                );
+              } else {
+                print('No file selected for upload.');
+              }
+            },
+            child: Text(
+              'Submit',
+              style: GoogleFonts.montserrat(
+                color: const Color(0xFFFAFAFA),
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
               ),
-              SizedBox(height: 46,)],
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF47518C),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
