@@ -126,7 +126,9 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
       child: Scaffold(
         appBar: AppBar(
           titleSpacing: 0,
-          leading: const Icon(Icons.arrow_back_ios_outlined,color: Pallete.neutral900,),
+          leading: InkWell(
+            onTap:(){ Navigator.pop(context);},
+            child: const Icon(Icons.arrow_back_ios_outlined,color: Pallete.neutral900,)),
           title: Text("Create Task",
            style: GoogleFonts.montserrat(
               textStyle: const TextStyle(
